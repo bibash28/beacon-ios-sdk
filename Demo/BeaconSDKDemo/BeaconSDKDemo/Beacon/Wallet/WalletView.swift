@@ -29,7 +29,7 @@ struct WalletView: View {
                 
                 HStack {
                     Button("Unpair") { viewModel.unpair() }
-                    Button("Pair") { viewModel.pair() }
+                    Button("Add Peer") { viewModel.addPeer() }
                 }.frame(maxWidth: .infinity, alignment: .trailing)
                 
                 Button("Respond") { viewModel.sendResponse() }

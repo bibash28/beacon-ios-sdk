@@ -13,9 +13,10 @@ import BeaconBlockchainSubstrate
 import BeaconBlockchainTezos
 import BeaconClientWallet
 import BeaconTransportP2PMatrix
+import Base58Swift
 
 class WalletViewModel: ObservableObject {
-    private static let examplePairingRequest = "3NDKTWt2x3L5cYYtM2jL8YcpgmPR8EQbNNa4yoffDb1qXTMTydqVPkgHRjcWBcvmxTLAQ4D8JrvkrYvfnKjwvXTeojrzHN4KvnX6kYzgwtoDruE8hiwJynSDcFihkWaaUZKkTrkDYqz24c1Si6xWtkUa5SGuqDq2sE6TQhHita59BVWhh4zqyST8DKTnYEdSy93B6ei29cWcgmQamYPBSXLqn6toadS6yZUUH9mV2w8dhwvgXC9bDK4oGDxzT7zTofrP8bRwXPUUc3NGRc2MGhahTS5XsaFWqjxbKBX8JK7jSUHR9fJfxHoVQtav66BtVMtVtEt"
+    private static let examplePairingRequest = "GUsRsanpcKww5NCSbVH88bpLAGxp1bPt4tF8oSYKcrpbLEsf9jZqkFFyUMs1xf7mU4RLnfHpZMPTM2T2cXcMfa1pZm9a2Gbvy8GNZ2e2enfZzhsm7DXzZqnpdCWk4MJaLGrA8BDMUBWhSSATqEyf518SABt7yRh6p3gbCiJAXXNHvMeLRvQhn2zN9eJNVToVW8ZxLvVGrR7fiwfzgYtky7mCJVBro6Cobw6Q7WPcgdj4HxqzR6qzrTi9DCYdBPz81UfxPZtvADGSBj15fJ89CSnYA22C5J2PsTPWPoLifbg2Fr6Tws2VNqVag9S3wzwUsnC2WQRCppR5"
     
     private static func exampleTezosAccount(network: Tezos.Network) throws -> Tezos.Account {
         try Tezos.Account(
@@ -116,6 +117,31 @@ class WalletViewModel: ObservableObject {
             case let .failure(error):
                 print("Failed to pair, got error: \(error)")
             }
+        }
+    }
+    
+    func addPeer() {
+        do {
+            guard let messageData = Base58.base58CheckDecode(pairingRequest) else {
+                throw AppError.invalidPairingRequest
+            }
+            
+            let data = Data(messageData)
+            guard let peer = try? JSONDecoder().decode(Beacon.P2PPeer.self, from: data) else {
+                throw AppError.invalidPairingRequest
+            }
+
+            beaconClient?.add([.p2p(peer)]) { result in
+                switch result {
+                case .success(_):
+                    print("Peers added \(peer) ")
+                    
+                case let .failure(error):
+                    print("Failed to add peer, got error: \(error)")
+                }
+            }
+        } catch {
+            print("Failed to add peer, got error: \(error)")
         }
     }
     
@@ -286,4 +312,10 @@ extension BeaconRequest: Encodable {
     enum Error: Swift.Error {
         case unsupportedBlockchain
     }
+}
+
+enum AppError: String, Error {
+    case pendingBeaconClient
+    case aborted
+    case invalidPairingRequest
 }
